@@ -2,6 +2,7 @@
 use std::{
     fmt,
     path::{Path, PathBuf},
+    str::FromStr,
 };
 
 use clap::{Parser, Subcommand, ValueEnum, ValueHint};
@@ -22,7 +23,7 @@ enum Command {
     /// Build a Merkle tree from paths
     Build {
         /// One or more folder paths to build a Merkle tree for
-        #[arg(value_name = "PATH", value_hint = ValueHint::DirPath, num_args = 1..,)]
+        #[arg(value_name = "PATH", value_hint = ValueHint::DirPath, num_args = 1.., required=true)]
         paths: Vec<PathBuf>,
         /// The hashing function we want to use to hash
         #[arg(long, default_value_t = HashMethod::Md5)]
@@ -41,6 +42,19 @@ enum Command {
         #[arg(value_hint = ValueHint::DirPath)]
         path2: PathBuf,
     },
+    /// Hash a single file
+    Hash {
+        /// Path to the file
+        #[arg(value_hint = ValueHint::FilePath)]
+        path: PathBuf,
+        /// The hashing function we want to use to hash
+        #[arg(long, default_value_t = HashMethod::Md5)]
+        method: HashMethod,
+        /// The number of bytes to hash, if 0 is provided then it hashes the
+        /// full content of the file
+        #[arg(short, long, default_value_t = 0)]
+        bytes_to_hash: u8,
+    },
 }
 #[derive(Default, Clone, ValueEnum, Debug)]
 enum HashMethod {
@@ -57,15 +71,22 @@ impl fmt::Display for HashMethod {
     }
 }
 
-// fn walk() -> Result<(), Box<dyn std::error::Error>> {
-//     for entry in WalkDir::new("/Users/nelson/Documents/datasets").sort(true)
-// {         println!("{}", entry?.path().display());
-//     }
-//     Ok(())
-// }
+// TODO: remove this as this was for educational content
+fn walk(folder: &Path) {
+    for entry in WalkDir::new(folder).sort(true) {
+        let file = match entry {
+            Ok(f) => String::from(f.path().to_str().unwrap()),
+            Err(e) => String::from("puant"),
+        };
+
+        println!("{}", file);
+
+        // println!("{}", entry?.path().display());
+    }
+}
 
 fn build_merkle_tree(folder: &Path) {
-    println!("d{}", folder.display())
+    walk(folder);
 }
 
 fn main() {
@@ -78,6 +99,9 @@ fn main() {
             }
         }
         Command::Compare { path1, path2 } => {
+            unimplemented!()
+        }
+        Command::Hash { path, method, bytes_to_hash } => {
             unimplemented!()
         }
     }
