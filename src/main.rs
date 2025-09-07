@@ -1,8 +1,11 @@
 #![allow(unused)]
+use std::{
+    fmt,
+    path::{Path, PathBuf},
+};
+
 use clap::{Parser, Subcommand, ValueEnum, ValueHint};
 use jwalk::WalkDir;
-use std::fmt;
-use std::path::{Path, PathBuf};
 
 /// Simple tool to hash and compare your data
 #[derive(Parser, Debug)]
@@ -24,7 +27,8 @@ enum Command {
         /// The hashing function we want to use to hash
         #[arg(long, default_value_t = HashMethod::Md5)]
         method: HashMethod,
-        /// The number of bytes to hash, if 0 is provided then it hashes the full content of the file
+        /// The number of bytes to hash, if 0 is provided then it hashes the
+        /// full content of the file
         #[arg(short, long, default_value_t = 0)]
         bytes_to_hash: u8,
     },
@@ -54,8 +58,8 @@ impl fmt::Display for HashMethod {
 }
 
 // fn walk() -> Result<(), Box<dyn std::error::Error>> {
-//     for entry in WalkDir::new("/Users/nelson/Documents/datasets").sort(true) {
-//         println!("{}", entry?.path().display());
+//     for entry in WalkDir::new("/Users/nelson/Documents/datasets").sort(true)
+// {         println!("{}", entry?.path().display());
 //     }
 //     Ok(())
 // }
@@ -68,11 +72,7 @@ fn main() {
     let cli = Cli::parse();
 
     match &cli.command {
-        Command::Build {
-            paths,
-            method,
-            bytes_to_hash,
-        } => {
+        Command::Build { paths, method, bytes_to_hash } => {
             for path in paths {
                 build_merkle_tree(path);
             }
