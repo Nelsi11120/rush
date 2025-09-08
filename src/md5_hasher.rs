@@ -10,6 +10,6 @@ impl Hasher for MD5Algorithm {
     fn hash(data: &[u8]) -> Self::Hash {
         let mut hasher = Md5::new();
         hasher.update(data);
-        <[u8; 16]>::from(hasher.finalize()) // or hasher.finalize().into()
+        <[u8; 16]>::from(hasher.finalize())
     }
 }
