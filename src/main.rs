@@ -4,9 +4,9 @@ use std::{
     path::{Path, PathBuf},
     str::FromStr,
 };
-
+mod md5_hasher;
+mod merkle_trees;
 use clap::{Parser, Subcommand, ValueEnum, ValueHint};
-use jwalk::WalkDir;
 
 /// Simple tool to hash and compare your data
 #[derive(Parser, Debug)]
@@ -71,26 +71,14 @@ impl fmt::Display for HashMethod {
     }
 }
 
-// TODO: remove this as this was for educational content
-fn walk(folder: &Path) {
-    for entry in WalkDir::new(folder).sort(true) {
-        let file = match entry {
-            Ok(f) => String::from(f.path().to_str().unwrap()),
-            Err(e) => String::from("puant"),
-        };
-
-        println!("{}", file);
-
-        // println!("{}", entry?.path().display());
-    }
-}
-
 fn build_merkle_tree(folder: &Path) {
-    walk(folder);
+    unimplemented!()
 }
 
 fn main() {
     let cli = Cli::parse();
+
+    merkle_trees::demo();
 
     match &cli.command {
         Command::Build { paths, method, bytes_to_hash } => {
