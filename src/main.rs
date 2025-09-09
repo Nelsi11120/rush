@@ -4,9 +4,12 @@ use std::{
     path::{Path, PathBuf},
     str::FromStr,
 };
+mod hash;
 mod md5_hasher;
 mod merkle_trees;
 use clap::{Parser, Subcommand, ValueEnum, ValueHint};
+
+use crate::{hash::hash_file, merkle_trees::build_merkle_tree};
 
 /// Simple tool to hash and compare your data
 #[derive(Parser, Debug)]
@@ -18,7 +21,6 @@ struct Cli {
 }
 
 #[derive(Subcommand, Debug)]
-
 enum Command {
     /// Build a Merkle tree from paths
     Build {
@@ -31,7 +33,7 @@ enum Command {
         /// The number of bytes to hash, if 0 is provided then it hashes the
         /// full content of the file
         #[arg(short, long, default_value_t = 0)]
-        bytes_to_hash: u8,
+        bytes_to_hash: u64,
     },
     /// Compare the two Merkle trees from folder path
     Compare {
@@ -53,7 +55,7 @@ enum Command {
         /// The number of bytes to hash, if 0 is provided then it hashes the
         /// full content of the file
         #[arg(short, long, default_value_t = 0)]
-        bytes_to_hash: u8,
+        bytes_to_hash: u64,
     },
 }
 #[derive(Default, Clone, ValueEnum, Debug)]
@@ -71,26 +73,22 @@ impl fmt::Display for HashMethod {
     }
 }
 
-fn build_merkle_tree(folder: &Path) {
-    unimplemented!()
-}
-
 fn main() {
     let cli = Cli::parse();
-
-    merkle_trees::demo();
 
     match &cli.command {
         Command::Build { paths, method, bytes_to_hash } => {
             for path in paths {
-                build_merkle_tree(path);
+                build_merkle_tree(path, method, *bytes_to_hash);
             }
         }
         Command::Compare { path1, path2 } => {
             unimplemented!()
         }
         Command::Hash { path, method, bytes_to_hash } => {
-            unimplemented!()
+            let hash = hash_file(path, method, *bytes_to_hash).unwrap();
+            println!("Binary hash: {:?}", hash);
+            println!("{}", hex::encode(hash));
         }
     }
 }
