@@ -36,7 +36,7 @@ enum Command {
         bytes_to_hash: u64,
     },
     /// Compare the two Merkle trees from folder path
-    Compare {
+    Diff {
         /// Path to the first folder
         #[arg(value_hint = ValueHint::DirPath)]
         path1: PathBuf,
@@ -82,7 +82,7 @@ fn main() {
                 build_merkle_tree(path, method, *bytes_to_hash);
             }
         }
-        Command::Compare { path1, path2 } => {
+        Command::Diff { path1, path2 } => {
             unimplemented!()
         }
         Command::Hash { path, method, bytes_to_hash } => {

@@ -1,3 +1,4 @@
+use core::hash;
 use std::{
     fs::File,
     io::{BufReader, Read},
@@ -23,12 +24,12 @@ impl Hasher for Md5Algorithm {
 pub fn md5_hash_file(path: &Path, bytes_to_hash: u64) -> std::io::Result<[u8; 16]> {
     let mut file = File::open(path)?;
     let mut hasher = Md5::new();
+    let mut hash = [0u8; 16];
 
     if bytes_to_hash == 0 {
         // Hash the whole file leveraging Read/Write traits
         std::io::copy(&mut file, &mut hasher)?;
-        let hash = <[u8; 16]>::from(hasher.finalize());
-        Ok(hash)
+        hash = hasher.finalize().into();
     } else {
         // Hash only up to bytes_to_hash
         // Default buffer size is 8192 bytes (8KB)
@@ -36,7 +37,8 @@ pub fn md5_hash_file(path: &Path, bytes_to_hash: u64) -> std::io::Result<[u8; 16
         // Read at most bytes_to_hash bytes
         let mut handle = reader.take(bytes_to_hash);
         std::io::copy(&mut handle, &mut hasher)?;
-        let hash = <[u8; 16]>::from(hasher.finalize());
-        Ok(hash)
+        hash = hasher.finalize().into();
     }
+
+    Ok(hash)
 }
