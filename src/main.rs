@@ -1,9 +1,5 @@
 #![allow(unused)]
-use std::{
-    fmt,
-    path::{Path, PathBuf},
-    str::FromStr,
-};
+use std::{fmt, path::PathBuf};
 mod hash;
 mod md5_hasher;
 mod merkle_trees;
@@ -77,15 +73,24 @@ fn main() {
     let cli = Cli::parse();
 
     match &cli.command {
-        Command::Build { paths, method, bytes_to_hash } => {
+        Command::Build {
+            paths,
+            method,
+            bytes_to_hash,
+        } => {
             for path in paths {
-                build_merkle_tree(path, method, *bytes_to_hash);
+                let hash_root = build_merkle_tree(path, method, *bytes_to_hash).unwrap();
+                println!("{}", hex::encode(hash_root));
             }
         }
         Command::Diff { path1, path2 } => {
             unimplemented!()
         }
-        Command::Hash { path, method, bytes_to_hash } => {
+        Command::Hash {
+            path,
+            method,
+            bytes_to_hash,
+        } => {
             let hash = hash_file(path, method, *bytes_to_hash).unwrap();
             println!("Binary hash: {:?}", hash);
             println!("{}", hex::encode(hash));

@@ -1,51 +1,65 @@
+use anyhow::Result;
+use rayon::prelude::*;
+use rs_merkle::MerkleTree;
+use serde::{Deserialize, Serialize};
+use std::ffi::OsString;
 use std::{
-    cmp, fs,
+    fs,
     path::{Path, PathBuf},
-    sync::mpsc::channel,
-    thread,
 };
 
-use rayon::prelude::*;
+use crate::{HashMethod, md5_hasher::Md5Algorithm, md5_hasher::md5_hash_file};
 
-use crate::{HashMethod, md5_hasher::md5_hash_file};
+#[derive(Serialize, Deserialize)]
+struct Leaf {
+    name: OsString,
+    content_hash: [u8; 16],
+}
 
-pub fn build_merkle_tree(
-    path: &Path,
-    method: &HashMethod,
+#[derive(Serialize, Deserialize)]
+struct Node {
+    name: OsString,
+    hash_method: &'static str,
+    root_hash: [u8; 16],
+    children: Vec<Leaf>,
     bytes_to_hash: u64,
-) -> std::io::Result<[u8; 16]> {
-    let mut hash_method;
+}
 
-    match method {
-        HashMethod::Md5 => {
-            hash_method = md5_hash_file;
-        }
-        _ => unimplemented!(),
-    }
+fn write_node() {
+    unimplemented!()
+}
 
-    let mut entries: Vec<PathBuf> =
-        fs::read_dir(path)?.filter_map(|e| e.ok().map(|e| e.path())).collect();
+pub fn build_merkle_tree(path: &Path, method: &HashMethod, bytes_to_hash: u64) -> Result<[u8; 16]> {
+    let hash_method = match method {
+        HashMethod::Md5 => md5_hash_file,
+    };
+
+    let mut entries: Vec<PathBuf> = fs::read_dir(path)?
+        .filter_map(|e| e.ok().map(|e| e.path()))
+        .collect();
 
     entries.sort_by(|a, b| a.file_name().cmp(&b.file_name()));
 
     // Recurse in Parallel
-    let children = entries
+    let children: Vec<Leaf> = entries
         .par_iter()
-        .map(|p| {
+        .map(|p| -> Result<Leaf> {
             let mut hash = [0u8; 16];
             if p.is_file() {
-                hash = hash_method(&p, bytes_to_hash)?;
-            } else {
-                hash = build_merkle_tree(p, &method, bytes_to_hash)?;
+                hash = hash_method(p, bytes_to_hash)?;
+            } else if p.is_dir() {
+                hash = build_merkle_tree(p, method, bytes_to_hash)?;
             }
-            Ok::<[u8; 16], std::io::Error>(hash)
+            Ok(Leaf {
+                name: p.as_os_str().to_os_string(),
+                content_hash: hash,
+            })
         })
-        .collect::<std::io::Result<Vec<[u8; 16]>>>();
+        .collect::<Result<Vec<Leaf>>>()?;
 
-    let children = children?;
+    let children_hash: Vec<[u8; 16]> = children.iter().map(|c| c.content_hash).collect();
+    let merkle_tree = MerkleTree::<Md5Algorithm>::from_leaves(&children_hash);
+    let root = merkle_tree.root().unwrap_or([0u8; 16]);
 
-    for child in children {
-        println!("{}", hex::encode(child));
-    }
-    Ok([0u8; 16])
+    Ok(root)
 }
