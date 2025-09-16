@@ -3,9 +3,10 @@ use std::{fmt, path::PathBuf};
 mod hash;
 mod md5_hasher;
 mod merkle_trees;
+use crate::{hash::hash_file, md5_hasher::md5_hash_file, merkle_trees::build_merkle_tree};
+use anyhow::Result;
 use clap::{Parser, Subcommand, ValueEnum, ValueHint};
-
-use crate::{hash::hash_file, merkle_trees::build_merkle_tree};
+use std::path::Path;
 
 /// Simple tool to hash and compare your data
 #[derive(Parser, Debug)]
@@ -59,6 +60,20 @@ enum HashMethod {
     #[clap(alias = "md5")]
     #[default]
     Md5,
+}
+
+impl HashMethod {
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            HashMethod::Md5 => "md5",
+        }
+    }
+
+    pub fn hash_method(&self) -> fn(&Path, u64) -> Result<[u8; 16]> {
+        match self {
+            HashMethod::Md5 => md5_hash_file,
+        }
+    }
 }
 
 impl fmt::Display for HashMethod {
