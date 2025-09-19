@@ -1,4 +1,3 @@
-#![allow(unused)]
 use std::{fmt, path::PathBuf};
 mod hash;
 mod md5_hasher;

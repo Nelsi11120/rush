@@ -2,7 +2,6 @@ use anyhow::Result;
 use rayon::prelude::*;
 use rs_merkle::MerkleTree;
 use serde::{Deserialize, Serialize};
-use std::ffi::OsString;
 use std::fs::File;
 use std::io::BufWriter;
 use std::{
@@ -29,19 +28,46 @@ struct Node {
     bytes_to_hash: u64,
 }
 
-fn store_node_to_disk(node: &Node, path: &Path) -> Result<()> {
-    // TODO: make mirroring and better path handling
-    let file_path = path.join("merkle.json");
+fn setup_build(root: &Path) -> anyhow::Result<PathBuf> {
+    let rush_root = root.join(".rush");
+    fs::create_dir_all(&rush_root)?;
+    Ok(rush_root)
+}
+
+fn store_node_to_disk(
+    node: &Node,
+    dataset_root: &Path,
+    path: &Path,
+    rush_root: &Path,
+) -> Result<()> {
+    let rel = path.strip_prefix(dataset_root)?;
+    let target_dir = rush_root.join(rel);
+
+    fs::create_dir_all(&target_dir)?;
+
+    let file_path = target_dir.join("merkle.json");
     let file = BufWriter::new(File::create(&file_path)?);
     serde_json::to_writer(file, node)?;
     Ok(())
 }
 
 pub fn build_merkle_tree(path: &Path, method: &HashMethod, bytes_to_hash: u64) -> Result<[u8; 16]> {
+    let rush_root = setup_build(path)?;
+    build_merkle_tree_rec(path, path, &rush_root, method, bytes_to_hash)
+}
+
+fn build_merkle_tree_rec(
+    dataset_root: &Path,
+    path: &Path,
+    rush_root: &Path,
+    method: &HashMethod,
+    bytes_to_hash: u64,
+) -> Result<[u8; 16]> {
     let hash_method = method.hash_method();
 
     let mut entries: Vec<PathBuf> = fs::read_dir(path)?
         .filter_map(|e| e.ok().map(|e| e.path()))
+        .filter(|p| p.file_name().is_none_or(|p| p != ".rush"))
         .collect();
 
     entries.sort_by(|a, b| a.file_name().cmp(&b.file_name()));
@@ -54,7 +80,7 @@ pub fn build_merkle_tree(path: &Path, method: &HashMethod, bytes_to_hash: u64) -
             if p.is_file() {
                 hash = hash_method(p, bytes_to_hash)?;
             } else if p.is_dir() {
-                hash = build_merkle_tree(p, method, bytes_to_hash)?;
+                hash = build_merkle_tree_rec(dataset_root, p, rush_root, method, bytes_to_hash)?;
             }
             Ok(Leaf {
                 name: p.to_string_lossy().into_owned(),
@@ -75,7 +101,7 @@ pub fn build_merkle_tree(path: &Path, method: &HashMethod, bytes_to_hash: u64) -
         bytes_to_hash,
     };
 
-    let _ = store_node_to_disk(&node, path);
+    let _ = store_node_to_disk(&node, dataset_root, path, rush_root);
 
     Ok(root)
 }
