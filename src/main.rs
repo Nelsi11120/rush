@@ -1,3 +1,4 @@
+#![allow(unused)]
 use std::{fmt, path::PathBuf};
 mod diff;
 mod hash;
@@ -113,7 +114,21 @@ fn rush() -> Result<()> {
                 anyhow::bail!("incorrect path: {}\n should be a directory", path.display());
             }
         }
-        Command::Diff { path1, path2 } => diff(path1, path2)?,
+        Command::Diff { path1, path2 } => {
+            if let Some(d) = diff(path1, path2)? {
+                // print in a simple, deterministic order
+                for k in d.added {
+                    println!("Only in right: {}", k);
+                }
+                for k in d.removed {
+                    println!("Only in left: {}", k);
+                }
+                for k in d.changed {
+                    println!("Files differ: {}", k);
+                }
+            }
+            // If None => identical => print nothing (like GNU diff)
+        }
         Command::Hash {
             path,
             method,
