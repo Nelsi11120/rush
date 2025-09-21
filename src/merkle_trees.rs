@@ -1,4 +1,4 @@
-use anyhow::Result;
+use anyhow::{Result, bail};
 use rayon::prelude::*;
 use rs_merkle::MerkleTree;
 
@@ -84,8 +84,15 @@ fn build_merkle_tree_rec(
                     store,
                 )?;
             }
+
+            // convert &PathBuf to String
+            let name = match p.file_name() {
+                Some(os) => os.to_string_lossy().into_owned(),
+                None => bail!("missing file name for: {}", p.display()),
+            };
+
             Ok(Leaf {
-                name: rel_path_str(dataset_root, p),
+                name,
                 content_hash: hash,
             })
         })
