@@ -41,12 +41,12 @@ pub fn build_merkle_tree(
     bytes_to_hash: u64,
     store: bool,
 ) -> Result<[u8; 16]> {
-    let rush_root: PathBuf;
-    if store {
-        rush_root = setup_build(path)?;
+    // Get the rush root path
+    let rush_root = if store {
+        setup_build(path)?
     } else {
-        rush_root = path.into();
-    }
+        path.into()
+    };
     build_merkle_tree_rec(path, path, &rush_root, method, bytes_to_hash, store)
 }
 
@@ -103,7 +103,7 @@ fn build_merkle_tree_rec(
     let root = merkle_tree.root().unwrap_or([0u8; 16]);
 
     let node = Node {
-        name: rel_path_str(&dataset_root, &path),
+        name: rel_path_str(dataset_root, path),
         hash_method: method.as_str().to_string(),
         root_hash: root,
         children,
