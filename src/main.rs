@@ -24,9 +24,9 @@ struct Cli {
 enum Command {
     /// Build a Merkle tree from paths
     Build {
-        /// One or more folder paths to build a Merkle tree for
-        #[arg(value_name = "PATH", value_hint = ValueHint::DirPath, num_args = 1.., required=true)]
-        paths: Vec<PathBuf>,
+        /// Root path of the folder to build a merkle tree for
+        #[arg(value_name = "PATH", value_hint = ValueHint::DirPath, required=true)]
+        path: PathBuf,
         /// The hashing function we want to use to hash
         #[arg(long, default_value_t = HashMethod::Md5)]
         method: HashMethod,
@@ -101,13 +101,15 @@ fn rush() -> Result<()> {
 
     match &cli.command {
         Command::Build {
-            paths,
+            path,
             method,
             bytes_to_hash,
         } => {
-            for path in paths {
-                let hash_root = build_merkle_tree(path, method, *bytes_to_hash, true).unwrap();
+            if path.is_dir() {
+                let hash_root = build_merkle_tree(path, method, *bytes_to_hash, true)?;
                 println!("{}", hex::encode(hash_root));
+            } else {
+                anyhow::bail!("incorrect path: {}\n should be a directory", path.display());
             }
         }
         Command::Diff { path1, path2 } => diff(path1, path2),
@@ -122,7 +124,7 @@ fn rush() -> Result<()> {
             } else if path.is_dir() {
                 hash = build_merkle_tree(path, method, *bytes_to_hash, false)?;
             } else {
-                anyhow::bail!("path not accessible: {}", path.display())
+                anyhow::bail!("path not accessible: {}", path.display());
             }
             println!("Binary hash: {:?}", hash);
             println!("{}", hex::encode(hash));
