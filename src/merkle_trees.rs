@@ -51,9 +51,19 @@ fn store_node_to_disk(
     Ok(())
 }
 
-pub fn build_merkle_tree(path: &Path, method: &HashMethod, bytes_to_hash: u64) -> Result<[u8; 16]> {
-    let rush_root = setup_build(path)?;
-    build_merkle_tree_rec(path, path, &rush_root, method, bytes_to_hash)
+pub fn build_merkle_tree(
+    path: &Path,
+    method: &HashMethod,
+    bytes_to_hash: u64,
+    store: bool,
+) -> Result<[u8; 16]> {
+    let rush_root: PathBuf;
+    if store {
+        rush_root = setup_build(path)?;
+    } else {
+        rush_root = path.into();
+    }
+    build_merkle_tree_rec(path, path, &rush_root, method, bytes_to_hash, store)
 }
 
 fn build_merkle_tree_rec(
@@ -62,6 +72,7 @@ fn build_merkle_tree_rec(
     rush_root: &Path,
     method: &HashMethod,
     bytes_to_hash: u64,
+    store: bool,
 ) -> Result<[u8; 16]> {
     let hash_method = method.hash_method();
 
@@ -80,7 +91,14 @@ fn build_merkle_tree_rec(
             if p.is_file() {
                 hash = hash_method(p, bytes_to_hash)?;
             } else if p.is_dir() {
-                hash = build_merkle_tree_rec(dataset_root, p, rush_root, method, bytes_to_hash)?;
+                hash = build_merkle_tree_rec(
+                    dataset_root,
+                    p,
+                    rush_root,
+                    method,
+                    bytes_to_hash,
+                    store,
+                )?;
             }
             Ok(Leaf {
                 name: p.to_string_lossy().into_owned(),
@@ -101,7 +119,9 @@ fn build_merkle_tree_rec(
         bytes_to_hash,
     };
 
-    let _ = store_node_to_disk(&node, dataset_root, path, rush_root);
+    if store {
+        let _ = store_node_to_disk(&node, dataset_root, path, rush_root);
+    }
 
     Ok(root)
 }

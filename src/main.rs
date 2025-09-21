@@ -1,11 +1,15 @@
 use std::{fmt, path::PathBuf};
+mod diff;
 mod hash;
 mod md5_hasher;
 mod merkle_trees;
-use crate::{hash::hash_file, md5_hasher::md5_hash_file, merkle_trees::build_merkle_tree};
-use anyhow::Result;
+use crate::{
+    diff::diff, hash::hash_file, md5_hasher::md5_hash_file, merkle_trees::build_merkle_tree,
+};
+use anyhow::{Ok, Result};
 use clap::{Parser, Subcommand, ValueEnum, ValueHint};
 use std::path::Path;
+use std::process::ExitCode;
 
 /// Simple tool to hash and compare your data
 #[derive(Parser, Debug)]
@@ -83,7 +87,16 @@ impl fmt::Display for HashMethod {
     }
 }
 
-fn main() {
+fn main() -> ExitCode {
+    if let Err(err) = rush() {
+        eprintln!("error:{:#}", err);
+        ExitCode::FAILURE
+    } else {
+        ExitCode::SUCCESS
+    }
+}
+
+fn rush() -> Result<()> {
     let cli = Cli::parse();
 
     match &cli.command {
@@ -93,21 +106,28 @@ fn main() {
             bytes_to_hash,
         } => {
             for path in paths {
-                let hash_root = build_merkle_tree(path, method, *bytes_to_hash).unwrap();
+                let hash_root = build_merkle_tree(path, method, *bytes_to_hash, true).unwrap();
                 println!("{}", hex::encode(hash_root));
             }
         }
-        Command::Diff { path1, path2 } => {
-            unimplemented!()
-        }
+        Command::Diff { path1, path2 } => diff(path1, path2),
         Command::Hash {
             path,
             method,
             bytes_to_hash,
         } => {
-            let hash = hash_file(path, method, *bytes_to_hash).unwrap();
+            let hash: [u8; 16];
+            if path.is_file() {
+                hash = hash_file(path, method, *bytes_to_hash)?;
+            } else if path.is_dir() {
+                hash = build_merkle_tree(path, method, *bytes_to_hash, false)?;
+            } else {
+                anyhow::bail!("path not accessible: {}", path.display())
+            }
             println!("Binary hash: {:?}", hash);
             println!("{}", hex::encode(hash));
         }
     }
+
+    Ok(())
 }
