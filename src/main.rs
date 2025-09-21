@@ -3,6 +3,7 @@ mod diff;
 mod hash;
 mod md5_hasher;
 mod merkle_trees;
+mod utils;
 use crate::{
     diff::diff, hash::hash_file, md5_hasher::md5_hash_file, merkle_trees::build_merkle_tree,
 };
@@ -22,7 +23,7 @@ struct Cli {
 
 #[derive(Subcommand, Debug)]
 enum Command {
-    /// Build a Merkle tree from paths
+    /// Build a Merkle tree from path
     Build {
         /// Root path of the folder to build a merkle tree for
         #[arg(value_name = "PATH", value_hint = ValueHint::DirPath, required=true)]
@@ -112,7 +113,7 @@ fn rush() -> Result<()> {
                 anyhow::bail!("incorrect path: {}\n should be a directory", path.display());
             }
         }
-        Command::Diff { path1, path2 } => diff(path1, path2),
+        Command::Diff { path1, path2 } => diff(path1, path2)?,
         Command::Hash {
             path,
             method,

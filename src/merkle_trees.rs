@@ -1,7 +1,7 @@
 use anyhow::Result;
 use rayon::prelude::*;
 use rs_merkle::MerkleTree;
-use serde::{Deserialize, Serialize};
+
 use std::fs::File;
 use std::io::BufWriter;
 use std::{
@@ -10,23 +10,7 @@ use std::{
 };
 
 use crate::{HashMethod, md5_hasher::Md5Algorithm};
-
-#[derive(Serialize, Deserialize)]
-struct Leaf {
-    name: String,
-    #[serde(with = "hex::serde")]
-    content_hash: [u8; 16],
-}
-
-#[derive(Serialize, Deserialize)]
-struct Node {
-    name: String,
-    hash_method: &'static str,
-    #[serde(with = "hex::serde")]
-    root_hash: [u8; 16],
-    children: Vec<Leaf>,
-    bytes_to_hash: u64,
-}
+use crate::{utils::Leaf, utils::Node};
 
 fn setup_build(root: &Path) -> anyhow::Result<PathBuf> {
     let rush_root = root.join(".rush");
@@ -113,7 +97,7 @@ fn build_merkle_tree_rec(
 
     let node = Node {
         name: path.to_string_lossy().into_owned(),
-        hash_method: method.as_str(),
+        hash_method: method.as_str().to_string(),
         root_hash: root,
         children,
         bytes_to_hash,
