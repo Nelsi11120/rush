@@ -10,7 +10,7 @@ use std::{
 };
 
 use crate::{HashMethod, md5_hasher::Md5Algorithm};
-use crate::{utils::Leaf, utils::Node};
+use crate::{utils::Leaf, utils::Node, utils::rel_path_str};
 
 fn setup_build(root: &Path) -> anyhow::Result<PathBuf> {
     let rush_root = root.join(".rush");
@@ -85,7 +85,7 @@ fn build_merkle_tree_rec(
                 )?;
             }
             Ok(Leaf {
-                name: p.to_string_lossy().into_owned(),
+                name: rel_path_str(dataset_root, p),
                 content_hash: hash,
             })
         })
@@ -96,7 +96,7 @@ fn build_merkle_tree_rec(
     let root = merkle_tree.root().unwrap_or([0u8; 16]);
 
     let node = Node {
-        name: path.to_string_lossy().into_owned(),
+        name: rel_path_str(&dataset_root, &path),
         hash_method: method.as_str().to_string(),
         root_hash: root,
         children,

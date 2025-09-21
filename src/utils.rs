@@ -22,6 +22,11 @@ pub struct Node {
     pub bytes_to_hash: u64,
 }
 
+pub fn rel_path_str(root: &Path, path: &Path) -> String {
+    let rel = path.strip_prefix(root).unwrap_or(path);
+    rel.to_string_lossy().into_owned()
+}
+
 pub fn node_from_file(path: &Path) -> Result<Node> {
     // Open the file in read-only mode with buffer.
     let reader = BufReader::new(File::open(path)?);
