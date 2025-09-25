@@ -68,14 +68,6 @@ pub fn build(
     // First DFS pass: Collect files
     let file_names = collect_files(walker)?;
 
-    // Collect all entries, sorted by path for deterministic processing
-    let entries: Vec<DirEntry> = WalkDir::new(path)
-        .follow_links(false) // Do not follow symlinks
-        .into_iter()
-        .filter_map(|e| e.ok())
-        .filter(|e| !is_hidden(e)) // Skip hidden files
-        .collect();
-
     let nb_files = file_names.len();
     // allocate atomic counter
     let next = AtomicUsize::new(0);
