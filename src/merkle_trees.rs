@@ -39,6 +39,7 @@ pub fn build_merkle_tree(
     path: &Path,
     method: &HashMethod,
     bytes_to_hash: u64,
+    buffer_size: usize,
     store: bool,
 ) -> Result<[u8; 16]> {
     // Get the rush root path
@@ -47,7 +48,15 @@ pub fn build_merkle_tree(
     } else {
         path.into()
     };
-    build_merkle_tree_rec(path, path, &rush_root, method, bytes_to_hash, store)
+    build_merkle_tree_rec(
+        path,
+        path,
+        &rush_root,
+        method,
+        bytes_to_hash,
+        buffer_size,
+        store,
+    )
 }
 
 fn build_merkle_tree_rec(
@@ -56,6 +65,7 @@ fn build_merkle_tree_rec(
     rush_root: &Path,
     method: &HashMethod,
     bytes_to_hash: u64,
+    buffer_size: usize,
     store: bool,
 ) -> Result<[u8; 16]> {
     let hash_method = method.hash_method();
@@ -73,7 +83,7 @@ fn build_merkle_tree_rec(
         .map(|p| -> Result<Leaf> {
             let mut hash = [0u8; 16];
             if p.is_file() {
-                hash = hash_method(p, bytes_to_hash)?;
+                hash = hash_method(p, bytes_to_hash, buffer_size)?;
             } else if p.is_dir() {
                 hash = build_merkle_tree_rec(
                     dataset_root,
@@ -81,6 +91,7 @@ fn build_merkle_tree_rec(
                     rush_root,
                     method,
                     bytes_to_hash,
+                    buffer_size,
                     store,
                 )?;
             }
