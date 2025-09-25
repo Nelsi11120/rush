@@ -1,10 +1,11 @@
-#![allow(unused)]
 use std::{fmt, path::PathBuf};
 mod diff;
 mod hash;
 mod md5_hasher;
 mod merkle_trees;
+mod mt;
 mod utils;
+use crate::mt::build;
 use crate::{
     diff::diff, hash::hash_file, md5_hasher::md5_hash_file, merkle_trees::build_merkle_tree,
 };
@@ -12,7 +13,6 @@ use anyhow::{Ok, Result};
 use clap::{Parser, Subcommand, ValueEnum, ValueHint};
 use std::path::Path;
 use std::process::ExitCode;
-use std::time::Instant;
 /// Simple tool to hash and compare your data
 #[derive(Parser, Debug)]
 #[command(name="rush", version = "1.0", about, long_about = None)]
@@ -34,11 +34,14 @@ enum Command {
         method: HashMethod,
         /// The number of bytes to hash, if 0 is provided then it hashes the
         /// full content of the file
-        #[arg(short, long, default_value_t = 0)]
+        #[arg(long = "bh", default_value_t = 0)]
         bytes_to_hash: u64,
         /// Buffer size for read and hash operations.
-        #[arg(long = "bs", default_value_t = 8192)]
+        #[arg(short, long = "bs", default_value_t = 8192)]
         buffer_size: usize,
+        /// Number of worker threads (default: 4)
+        #[arg(long, short = 'w', default_value_t = 4)]
+        num_workers: usize,
     },
     /// Compare the two Merkle trees from folder path
     Diff {
@@ -59,12 +62,14 @@ enum Command {
         method: HashMethod,
         /// The number of bytes to hash, if 0 is provided then it hashes the
         /// full content of the file
-        #[arg(short, long, default_value_t = 0)]
+        #[arg(short, long = "bh", default_value_t = 0)]
         bytes_to_hash: u64,
         /// Buffer size for read and hash operations.
-        /// TODO: clamp bs
-        #[arg(long = "bs", default_value_t = 8192)]
+        #[arg(short, long = "bs", default_value_t = 8192)]
         buffer_size: usize,
+        /// Number of worker threads (default: 4)
+        #[arg(long, short = 'w', default_value_t = 4)]
+        num_workers: usize,
     },
 }
 #[derive(Default, Clone, ValueEnum, Debug)]
@@ -114,10 +119,17 @@ fn rush() -> Result<()> {
             method,
             bytes_to_hash,
             buffer_size,
+            num_workers,
         } => {
             if path.is_dir() {
-                let hash_root =
-                    build_merkle_tree(path, method, *bytes_to_hash, *buffer_size, true)?;
+                let hash_root = build(
+                    path,
+                    method,
+                    *bytes_to_hash,
+                    *buffer_size,
+                    *num_workers,
+                    true,
+                )?;
                 println!("{}", hex::encode(hash_root));
             } else {
                 anyhow::bail!("incorrect path: {}\n should be a directory", path.display());
@@ -143,59 +155,19 @@ fn rush() -> Result<()> {
             method,
             bytes_to_hash,
             buffer_size,
+            num_workers,
         } => {
-            let hash: [u8; 16];
-            if path.is_file() {
-                let file_len = std::fs::metadata(path)?.len();
-                let runs = 3;
-                let mut times = Vec::with_capacity(runs);
-                let mut hash = [0u8; 16];
-                for run in 1..=runs {
-                    let t0 = Instant::now();
-                    hash = hash_file(path, method, *bytes_to_hash, *buffer_size)?;
-                    let dt = t0.elapsed().as_secs_f64();
-                    times.push(dt);
-                    let mbps = (file_len as f64) / 1_000_000.0 / dt;
-                    let mibps = (file_len as f64) / (1024.0 * 1024.0) / dt;
-                    eprintln!("run {run}: {dt:.3}s  {mbps:.1} MB/s ({mibps:.1} MiB/s)");
-                }
-
-                // stats
-                let mut sorted = times.clone();
-                sorted.sort_by(|a, b| a.partial_cmp(b).unwrap());
-                let best = sorted[0];
-                let mean = times.iter().sum::<f64>() / times.len() as f64;
-                let median = if sorted.len() % 2 == 1 {
-                    sorted[sorted.len() / 2]
+            let hash_root = {
+                if path.is_file() {
+                    hash_file(path, method, *bytes_to_hash, *buffer_size)?
+                } else if path.is_dir() {
+                    build_merkle_tree(path, method, *bytes_to_hash, *buffer_size, false)?
                 } else {
-                    (sorted[sorted.len() / 2 - 1] + sorted[sorted.len() / 2]) * 0.5
-                };
-
-                // throughputs for stats
-                let mb = file_len as f64 / 1_000_000.0;
-                let mib = file_len as f64 / (1024.0 * 1024.0);
-                eprintln!(
-                    "best:   {best:.3}s  {}/s ({:.1} MiB/s)",
-                    format!("{:.1} MB", mb / best),
-                    mib / best
-                );
-                eprintln!(
-                    "median: {median:.3}s  {}/s ({:.1} MiB/s)",
-                    format!("{:.1} MB", mb / median),
-                    mib / median
-                );
-                eprintln!(
-                    "mean:   {mean:.3}s  {}/s ({:.1} MiB/s)",
-                    format!("{:.1} MB", mb / mean),
-                    mib / mean
-                );
-            } else if path.is_dir() {
-                hash = build_merkle_tree(path, method, *bytes_to_hash, *buffer_size, false)?;
-            } else {
-                anyhow::bail!("path not accessible: {}", path.display());
-            }
+                    anyhow::bail!("path not accessible: {}", path.display());
+                }
+            };
+            print!("{}", hex::encode(hash_root));
         }
     }
-
     Ok(())
 }

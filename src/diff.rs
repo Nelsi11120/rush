@@ -28,7 +28,7 @@ fn map_children(node: &Node) -> HashMap<&str, [u8; 16]> {
     node_childrens
 }
 
-pub fn diff(path_l: &Path, path_r: &Path) -> Result<(Option<Diff>)> {
+pub fn diff(path_l: &Path, path_r: &Path) -> Result<Option<Diff>> {
     // Prepare paths by redirecting to hidden Merkle Tree folder
     let path_l = path_l.join(".rush");
     let path_r = path_r.join(".rush");
