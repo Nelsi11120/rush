@@ -3,6 +3,22 @@ use anyhow::{Ok, Result, bail};
 use std::collections::HashMap;
 use std::path::Path;
 
+pub(crate) fn invoke(lhs: &Path, rhs: &Path) -> Result<()> {
+    if let Some(d) = diff(lhs, rhs)? {
+        // print in a simple, deterministic order
+        for k in d.added {
+            println!("Only in right: {}", k);
+        }
+        for k in d.removed {
+            println!("Only in left: {}", k);
+        }
+        for k in d.changed {
+            println!("Files differ: {}", k);
+        }
+    }
+    // If None => identical => print nothing (like GNU diff)
+    Ok(())
+}
 pub struct Diff {
     pub added: Vec<String>,   // present only in rhs
     pub removed: Vec<String>, // present only in lhs
@@ -22,7 +38,7 @@ fn diff_nodes(lhs: &Node, rhs: &Node) -> Result<Option<Diff>> {
 fn map_children(node: &Node) -> HashMap<&str, [u8; 16]> {
     let mut node_childrens = HashMap::new();
     node.children.iter().for_each(|c| {
-        node_childrens.insert(c.name.as_str(), c.content_hash);
+        node_childrens.insert(c.name.as_str(), c.hash);
     });
 
     node_childrens
