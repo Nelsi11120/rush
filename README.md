@@ -65,6 +65,3 @@ rush diff ./dataset_v1 ./dataset_v2
 # rush
 [![MIT License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![Rust](https://img.shields.io/badge/rust-1.89%2B-orange.svg)](https://www.rust-lang.org)
-
-`rush` (**Ru**st + ha**sh**) is a simple CLI tool to **hash and compare datasets** using Merkle trees, written in Rust.  
-It can hash individual files, build full dataset Merkle trees, and compare two trees to spot differences.
