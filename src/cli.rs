@@ -48,11 +48,11 @@ pub(crate) enum Command {
         #[arg(value_hint = ValueHint::FilePath)]
         path: PathBuf,
         /// The hashing function we want to use to hash
-        #[arg(long, default_value_t = HashMethod::Md5)]
+        #[arg(short, long, default_value_t = HashMethod::Md5)]
         method: HashMethod,
         /// The number of bytes to hash, if 0 is provided then it hashes the
         /// full content of the file
-        #[arg(short, long = "bh", default_value_t = 0)]
+        #[arg(long = "bh", default_value_t = 0)]
         bytes_to_hash: u64,
         /// Buffer size for read and hash operations.
         #[arg(short, long = "bs", default_value_t = 8192)]

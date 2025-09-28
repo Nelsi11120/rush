@@ -101,8 +101,14 @@ where
                 bail!("neither file or folder")
             }
         };
-        let name = rel_path_str(&cfg.dataset_root, &entry);
-        children.push(Leaf { name, hash });
+
+        children.push(Leaf {
+            name: entry
+                .file_name()
+                .map(|s| s.to_string_lossy().into_owned())
+                .unwrap_or_default(),
+            hash,
+        });
 
         // covert hash for merkle tree
         let hash = H::from_digest(&hash)?;
