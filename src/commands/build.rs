@@ -79,7 +79,7 @@ fn store_node_to_disk(
 
 fn build_merkle_tree<H>(
     path: &Path,
-    hashes: &Vec<Digest>,
+    hashes: &[Digest],
     file_index: &mut usize,
     cfg: &BuildConfig,
 ) -> Result<Digest>
