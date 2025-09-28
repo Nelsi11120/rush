@@ -20,7 +20,7 @@ pub(crate) enum Command {
         #[arg(value_name = "PATH", value_hint = ValueHint::DirPath, required=true)]
         path: PathBuf,
         /// The hashing function we want to use to hash
-        #[arg(long, default_value_t = HashMethod::Md5)]
+        #[arg(short, long, default_value_t = HashMethod::Md5)]
         method: HashMethod,
         /// The number of bytes to hash, if 0 is provided then it hashes the
         /// full content of the file

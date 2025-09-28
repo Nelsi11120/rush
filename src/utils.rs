@@ -6,11 +6,13 @@ use std::io::BufReader;
 use std::path::Path;
 use std::path::PathBuf;
 
+use crate::hashers::utils::Digest;
+
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Leaf {
     pub name: String,
     #[serde(with = "hex::serde")]
-    pub hash: [u8; 16],
+    pub hash: Digest,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -18,7 +20,7 @@ pub struct Node {
     pub name: String,
     pub hash_method: String,
     #[serde(with = "hex::serde")]
-    pub root_hash: [u8; 16],
+    pub root_hash: Digest,
     pub children: Vec<Leaf>,
     pub bytes_to_hash: u64,
 }

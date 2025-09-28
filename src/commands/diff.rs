@@ -1,3 +1,4 @@
+use crate::hashers::utils::Digest;
 use crate::{utils::Node, utils::node_from_file};
 use anyhow::{Ok, Result, bail};
 use std::collections::HashMap;
@@ -35,7 +36,7 @@ fn diff_nodes(lhs: &Node, rhs: &Node) -> Result<Option<Diff>> {
     unimplemented!()
 }
 
-fn map_children(node: &Node) -> HashMap<&str, [u8; 16]> {
+fn map_children(node: &Node) -> HashMap<&str, Digest> {
     let mut node_childrens = HashMap::new();
     node.children.iter().for_each(|c| {
         node_childrens.insert(c.name.as_str(), c.hash);

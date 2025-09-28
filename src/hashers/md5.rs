@@ -1,4 +1,4 @@
-use anyhow::Result;
+use anyhow::{Result, bail};
 use openssl::hash::{Hasher, MessageDigest};
 use rs_merkle::Hasher as Mh;
 use std::{
@@ -6,6 +6,8 @@ use std::{
     io::{BufReader, Read},
     path::Path,
 };
+
+use crate::hashers::utils::{Digest, DigestCompatibleHasher};
 
 #[derive(Clone)]
 pub struct Md5Algorithm {}
@@ -23,7 +25,24 @@ impl Mh for Md5Algorithm {
     }
 }
 
-pub fn md5_hash_file(path: &Path, bytes_to_hash: u64, buffer_size: usize) -> Result<[u8; 16]> {
+impl DigestCompatibleHasher for Md5Algorithm {
+    fn to_digest(hash: Self::Hash) -> Digest {
+        Digest::D16(hash)
+    }
+
+    fn from_digest(digest: &Digest) -> Result<Self::Hash> {
+        match digest {
+            Digest::D16(arr) => Ok(*arr),
+            _ => bail!("Expected 16-byte digest for Blake3"),
+        }
+    }
+
+    fn zero_digest() -> Digest {
+        Digest::D16([0u8; 16])
+    }
+}
+
+pub fn md5_hash_file(path: &Path, bytes_to_hash: u64, buffer_size: usize) -> Result<Digest> {
     let file = File::open(path)?;
     let mut hasher = Hasher::new(MessageDigest::md5())?;
 
@@ -39,5 +58,5 @@ pub fn md5_hash_file(path: &Path, bytes_to_hash: u64, buffer_size: usize) -> Res
     };
 
     let digest = hasher.finish()?;
-    Ok((*digest).try_into()?)
+    Ok(Digest::D16((*digest).try_into()?))
 }

@@ -13,7 +13,7 @@ It can hash individual files, build full dataset Merkle trees, and compare two t
 - 🔑 Hash a single file (`rush hash`)
 - 🌳 Build a Merkle tree from a dataset (`rush build`)
 - 🔍 Compare two datasets (`rush diff`) – *in progress*
-- 🔌 Extensible design: new hashers (BLAKE3, SHA-256, …) can be added easily
+- 🔌 Extensible design: new hashers can be added easily
 
 ## Installation
 ```bash
@@ -25,10 +25,16 @@ The binary will be in ```target/release/rush```
 
 ## Usage
 
-### Build a Merkle tree
+### Build a dataset Merkle tree
 
 ```bash
 rush build ./my_dataset --num-workers 4
+```
+
+### Build a dataset Merkle tree using Blake3
+
+```bash
+rush build ./my_dataset --num-workers 4 --method blake3
 ```
 
 ### Hash a single file
@@ -48,7 +54,8 @@ rush diff ./dataset_v1 ./dataset_v2
 - [x] File hashing (`rush hash`)
 - [x] Build Merkle tree (`rush build`)
 - [ ] Diff two datasets (`rush diff`)
-- [ ] Support for BLAKE3 and SHA-256
+- [x] Support for BLAKE3 (`rush build --method blake3`)
+- [ ] Support for SHA256 
 - [ ] Python bindings (PyPI wheel via pyo3/maturin)
 
 #### Nice to have

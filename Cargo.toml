@@ -6,6 +6,7 @@ license = "MIT"
 
 [dependencies]
 anyhow = "1.0.99"
+blake3 = "1.8.2"
 clap = { version = "4.5.47", features = ["derive"] }
 hex = { version = "0.4.3", features = ["serde"] }
 openssl = "0.10.73"

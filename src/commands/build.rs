@@ -4,8 +4,9 @@ use rs_merkle::MerkleTree;
 use std::io::BufWriter;
 use std::path::{Path, PathBuf};
 
+use crate::hashers::blake3::Blake3Algorithm;
 use crate::hashers::md5::Md5Algorithm;
-use crate::hashers::utils::{HashMethod, hash_file};
+use crate::hashers::utils::{Digest, DigestCompatibleHasher, HashMethod, hash_file};
 use crate::utils::{BuildConfig, Leaf, Node, rel_path_str};
 use std::fs;
 use std::fs::File;
@@ -22,7 +23,7 @@ pub(crate) fn invoke(
     num_workers: usize,
 ) -> Result<()> {
     if path.is_dir() {
-        let hash_root = build(path, method, bytes_to_hash, buffer_size, num_workers, true)?;
+        let hash_root = generic_build(path, method, bytes_to_hash, buffer_size, num_workers)?;
         println!("{}", hex::encode(hash_root));
     } else {
         anyhow::bail!("incorrect path: {}\n should be a directory", path.display());
@@ -76,16 +77,18 @@ fn store_node_to_disk(
     Ok(())
 }
 
-// TODO: find better argument handling
-fn build_merkle_tree(
+fn build_merkle_tree<H>(
     path: &Path,
-    hashes: &Vec<[u8; 16]>,
+    hashes: &Vec<Digest>,
     file_index: &mut usize,
     cfg: &BuildConfig,
-) -> Result<[u8; 16]> {
+) -> Result<Digest>
+where
+    H: DigestCompatibleHasher,
+{
     let entries = get_deterministic_entries(path)?;
     let mut children = Vec::new();
-    let mut merkle_tree = MerkleTree::<Md5Algorithm>::new();
+    let mut merkle_tree = MerkleTree::<H>::new();
     for entry in entries {
         let hash = {
             if entry.is_file() {
@@ -93,23 +96,30 @@ fn build_merkle_tree(
                 *file_index += 1;
                 hash
             } else if entry.is_dir() {
-                build_merkle_tree(&entry, hashes, file_index, cfg)?
+                build_merkle_tree::<H>(&entry, hashes, file_index, cfg)?
             } else {
                 bail!("neither file or folder")
             }
         };
         let name = rel_path_str(&cfg.dataset_root, &entry);
         children.push(Leaf { name, hash });
+
+        // covert hash for merkle tree
+        let hash = H::from_digest(&hash)?;
         merkle_tree.insert(hash);
     }
     // Don't forget to commit the changes made by MerkleTree::insert
     merkle_tree.commit();
-    let root = merkle_tree.root().unwrap_or([0u8; 16]);
+    let root = merkle_tree
+        .root()
+        .ok_or_else(|| anyhow::anyhow!("Merkle tree has no root (empty tree?)"))?;
+
+    let root_hash = H::to_digest(root);
 
     let node = Node {
         name: rel_path_str(&cfg.dataset_root, path),
         hash_method: cfg.method.to_string(),
-        root_hash: root,
+        root_hash,
         children,
         bytes_to_hash: cfg.bytes_to_hash,
     };
@@ -118,28 +128,31 @@ fn build_merkle_tree(
         let _ = store_node_to_disk(&node, &cfg.dataset_root, path, &cfg.rush_root);
     }
 
-    Ok(root)
+    Ok(root_hash)
 }
 
-fn build(
+fn build<H>(
     path: &Path,
     method: &HashMethod,
     bytes_to_hash: u64,
     buffer_size: usize,
     num_workers: usize,
     store: bool,
-) -> Result<[u8; 16]> {
+) -> Result<Digest>
+where
+    H: DigestCompatibleHasher,
+{
     let mut file_names = Vec::new();
     // First DFS pass: Collect files
     initialize(path, &mut file_names)?;
 
     let nb_files = file_names.len();
-    // allocate atomic counter
+    // Allocate atomic counter
     let next = AtomicUsize::new(0);
-    // Result buffer
-    let hashes: Vec<[u8; 16]> = vec![[0u8; 16]; nb_files];
+    // Initialize result vector with zeros
+    let hashes: Vec<Digest> = vec![H::zero_digest(); nb_files];
 
-    // spawn threads
+    // Spawn scope threads
     thread::scope(|s| {
         for _ in 0..num_workers {
             s.spawn(|| -> Result<()> {
@@ -154,7 +167,7 @@ fn build(
                     // No races and we can safely deref the raw pointer.
                     unsafe {
                         let ptr = hashes.as_ptr().add(i);
-                        std::ptr::write(ptr as *mut [u8; 16], hash);
+                        std::ptr::write(ptr as *mut Digest, hash);
                     }
                 }
                 Ok(())
@@ -179,7 +192,26 @@ fn build(
         bytes_to_hash,
         store,
     };
-    let root = build_merkle_tree(path, &hashes, &mut file_index, &cfg)?;
+    let root = build_merkle_tree::<H>(path, &hashes, &mut file_index, &cfg)?;
 
     Ok(root)
+}
+
+fn generic_build(
+    path: &Path,
+    method: &HashMethod,
+    bytes_to_hash: u64,
+    buffer_size: usize,
+    num_workers: usize,
+) -> Result<Digest> {
+    let hash_root = match method {
+        HashMethod::Md5 => {
+            build::<Md5Algorithm>(path, method, bytes_to_hash, buffer_size, num_workers, true)?
+        }
+        HashMethod::Blake3 => {
+            build::<Blake3Algorithm>(path, method, bytes_to_hash, buffer_size, num_workers, true)?
+        }
+    };
+
+    Ok(hash_root)
 }
