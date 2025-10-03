@@ -55,7 +55,7 @@ rush diff ./dataset_v1 ./dataset_v2
 - [x] Build Merkle tree (`rush build`)
 - [ ] Diff two datasets (`rush diff`)
 - [x] Support for BLAKE3 (`rush build --method blake3`)
-- [ ] Support for SHA256 
+- [x] Support for SHA256 (`rush build -m sha256`)
 - [ ] Python bindings (PyPI wheel via pyo3/maturin)
 
 #### Nice to have

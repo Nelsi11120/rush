@@ -6,6 +6,7 @@ use std::path::{Path, PathBuf};
 
 use crate::hashers::blake3::Blake3Algorithm;
 use crate::hashers::md5::Md5Algorithm;
+use crate::hashers::sha256::Sha256Algorithm;
 use crate::hashers::utils::{Digest, DigestCompatibleHasher, HashMethod, hash_file};
 use crate::utils::{BuildConfig, Leaf, Node, rel_path_str};
 use std::fs;
@@ -216,6 +217,9 @@ fn generic_build(
         }
         HashMethod::Blake3 => {
             build::<Blake3Algorithm>(path, method, bytes_to_hash, buffer_size, num_workers, true)?
+        }
+        HashMethod::Sha256 => {
+            build::<Sha256Algorithm>(path, method, bytes_to_hash, buffer_size, num_workers, true)?
         }
     };
 

@@ -1,4 +1,4 @@
-use crate::hashers::{blake3::blake3_hash_file, md5::md5_hash_file};
+use crate::hashers::{blake3::blake3_hash_file, md5::md5_hash_file, sha256::sha256_hash_file};
 use anyhow::{Ok, Result};
 use clap::ValueEnum;
 use hex::{FromHex, decode_to_slice};
@@ -11,6 +11,7 @@ pub enum HashMethod {
     #[default]
     Md5,
     Blake3,
+    Sha256,
 }
 
 #[derive(Copy, Clone, Debug, PartialEq)]
@@ -58,6 +59,7 @@ impl HashMethod {
         match self {
             HashMethod::Md5 => "md5",
             HashMethod::Blake3 => "blake3",
+            HashMethod::Sha256 => "sha256",
         }
     }
 }
@@ -67,6 +69,7 @@ impl fmt::Display for HashMethod {
         f.write_str(match self {
             HashMethod::Md5 => "md5",
             HashMethod::Blake3 => "blake3",
+            HashMethod::Sha256 => "sha256",
         })
     }
 }
@@ -80,6 +83,7 @@ pub fn hash_file(
     match method {
         HashMethod::Md5 => Ok(md5_hash_file(path, bytes_to_hash, buffer_size)?),
         HashMethod::Blake3 => Ok(blake3_hash_file(path, bytes_to_hash, buffer_size)?),
+        HashMethod::Sha256 => Ok(sha256_hash_file(path, bytes_to_hash, buffer_size)?),
     }
 }
 

@@ -51,10 +51,10 @@ pub fn md5_hash_file(path: &Path, bytes_to_hash: u64, buffer_size: usize) -> Res
         // Read at most bytes_to_hash bytes
         let taker = file.take(bytes_to_hash);
         let mut reader = BufReader::with_capacity(buffer_size, taker);
-        std::io::copy(&mut reader, &mut hasher)?
+        std::io::copy(&mut reader, &mut hasher)?;
     } else {
         let mut reader = BufReader::with_capacity(buffer_size, file);
-        std::io::copy(&mut reader, &mut hasher)?
+        std::io::copy(&mut reader, &mut hasher)?;
     };
 
     let digest = hasher.finish()?;
