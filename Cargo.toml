@@ -1,8 +1,11 @@
 [package]
 name = "rush"
-version = "0.1.0"
+version = "1.0.0"
+authors = ["Nelson Antunes <me@nelsonantunes.com>"]
 edition = "2024"
 license = "MIT"
+description = "CLI for dataset hashing and comparison"
+
 
 [dependencies]
 anyhow = "1.0.99"
