@@ -53,12 +53,12 @@ rush diff ./dataset_v1 ./dataset_v2
 #### Core Features
 - [x] File hashing (`rush hash`)
 - [x] Build Merkle tree (`rush build`)
-- [ ] Diff two datasets (`rush diff`)
+- [x] Diff two datasets (`rush diff`)
 - [x] Support for BLAKE3 (`rush build --method blake3`)
 - [x] Support for SHA256 (`rush build -m sha256`)
-- [ ] Python bindings (PyPI wheel via pyo3/maturin)
 
 #### Nice to have
+- [ ] Python bindings (PyPI wheel via pyo3/maturin)
 - [ ] Benchmark hashing throughput
 - [ ] Progress bar for hashing
 - [ ] Shell completions (bash/zsh/fish)
