@@ -7,6 +7,7 @@ It can hash individual files, build full dataset Merkle trees, and compare two t
 > **Note**  
 > This is a **toy project**, built for fun and as a way to learn more about Rust.  
 > It’s not meant for production use, but feel free to explore, tinker, or extend it.
+> The core methods are reliable.
 
 ## Features
 
