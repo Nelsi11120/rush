@@ -56,11 +56,7 @@ pub fn diff(path_l: &Path, path_r: &Path) -> Result<Option<Diff>> {
     // Prepare paths by redirecting to hidden Merkle Tree folder
     let path_l = path_l.join(".rush");
     let path_r = path_r.join(".rush");
-    let mut out = Diff {
-        added: vec![],
-        removed: vec![],
-        changed: vec![],
-    };
+    let mut out = Diff::default();
 
     // Recursive call
     diff_rec(&path_l, &path_r, Path::new(""), &mut out)?;
