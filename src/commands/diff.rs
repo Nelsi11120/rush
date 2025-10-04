@@ -44,9 +44,10 @@ fn node_from_path(path: &Path) -> Result<Node> {
 
 fn map_children(node: &Node) -> BTreeMap<&str, &Digest> {
     let mut children = BTreeMap::new();
-    node.children.iter().for_each(|c| {
+
+    for c in &node.children {
         children.insert(c.name.as_str(), &c.hash);
-    });
+    }
 
     children
 }
