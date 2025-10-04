@@ -1,6 +1,6 @@
 # Rush
 
-`rush` (**Ru**st + ha**sh**) is a simple CLI tool to **hash and compare datasets** using Merkle trees written in Rust.  
+`rush` (**Ru**st + ha**sh**) is a simple yet efficient CLI tool to **hash and compare datasets** using Merkle trees written in Rust.  
 It can hash individual files, build full dataset Merkle trees, and compare two trees to spot differences.
 
 
@@ -47,6 +47,11 @@ rush hash ./file.txt
 ```bash
 rush diff ./dataset_v1 ./dataset_v2
 ```
+
+## Supported Hash Algorithms
+- MD5 (default, fast)
+- SHA-256
+- BLAKE3 (recommended: very fast, secure)
 
 ## TODO / Progress
 
