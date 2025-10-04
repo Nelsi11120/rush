@@ -42,7 +42,7 @@ rush build ./my_dataset --num-workers 4 --method blake3
 rush hash ./file.txt
 ```
 
-### Compare two datasets (WIP)
+### Compare two datasets
 
 ```bash
 rush diff ./dataset_v1 ./dataset_v2
