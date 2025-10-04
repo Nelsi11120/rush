@@ -58,6 +58,7 @@ rush diff ./dataset_v1 ./dataset_v2
 - [x] Support for SHA256 (`rush build -m sha256`)
 
 #### Nice to have
+- [ ] Unit tests for commands
 - [ ] Python bindings (PyPI wheel via pyo3/maturin)
 - [ ] Benchmark hashing throughput
 - [ ] Progress bar for hashing
