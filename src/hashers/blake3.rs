@@ -32,10 +32,6 @@ impl DigestCompatibleHasher for Blake3Algorithm {
             _ => bail!("Expected 32-byte digest for Blake3"),
         }
     }
-
-    fn zero_digest() -> Digest {
-        Digest::D32([0u8; 32])
-    }
 }
 
 pub fn blake3_hash_file(path: &Path, bytes_to_hash: u64, buffer_size: usize) -> Result<Digest> {

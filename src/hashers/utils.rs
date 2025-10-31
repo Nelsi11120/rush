@@ -90,5 +90,4 @@ pub fn hash_file(
 pub trait DigestCompatibleHasher: Hasher {
     fn to_digest(hash: Self::Hash) -> Digest;
     fn from_digest(digest: &Digest) -> Result<Self::Hash>;
-    fn zero_digest() -> Digest;
 }

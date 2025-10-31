@@ -36,10 +36,6 @@ impl DigestCompatibleHasher for Md5Algorithm {
             _ => bail!("Expected 16-byte digest for Blake3"),
         }
     }
-
-    fn zero_digest() -> Digest {
-        Digest::D16([0u8; 16])
-    }
 }
 
 pub fn md5_hash_file(path: &Path, bytes_to_hash: u64, buffer_size: usize) -> Result<Digest> {

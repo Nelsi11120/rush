@@ -9,9 +9,9 @@ use crate::hashers::md5::Md5Algorithm;
 use crate::hashers::sha256::Sha256Algorithm;
 use crate::hashers::utils::{Digest, DigestCompatibleHasher, HashMethod, hash_file};
 use crate::utils::{BuildConfig, Leaf, Node, rel_path_str};
-use std::fs::File;
-use std::{fs, mem};
 use std::{
+    fs,
+    fs::File,
     mem::MaybeUninit,
     sync::atomic::{AtomicUsize, Ordering::Relaxed},
     thread,
