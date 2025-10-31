@@ -9,9 +9,10 @@ use crate::hashers::md5::Md5Algorithm;
 use crate::hashers::sha256::Sha256Algorithm;
 use crate::hashers::utils::{Digest, DigestCompatibleHasher, HashMethod, hash_file};
 use crate::utils::{BuildConfig, Leaf, Node, rel_path_str};
-use std::fs;
 use std::fs::File;
+use std::{fs, mem};
 use std::{
+    mem::MaybeUninit,
     sync::atomic::{AtomicUsize, Ordering::Relaxed},
     thread,
 };
@@ -156,8 +157,8 @@ where
     let nb_files = file_names.len();
     // Allocate atomic counter
     let next = AtomicUsize::new(0);
-    // Initialize result vector with zeros
-    let hashes: Vec<Digest> = vec![H::zero_digest(); nb_files];
+    // Construct a new empty Vec<MaybeUninit<Digest>> with unint values.
+    let mut hashes: Vec<MaybeUninit<Digest>> = Vec::with_capacity(nb_files);
 
     // Spawn scope threads
     thread::scope(|s| {
@@ -181,6 +182,13 @@ where
             });
         }
     });
+
+    // Now that the workers finished we need to properly set the length of the vec
+    unsafe {
+        hashes.set_len(nb_files);
+    }
+    // And weneed to tramsmute the Vec<MaybeUninit<Digest>> to Vec<Digest>
+    let hashes: Vec<Digest> = unsafe { std::mem::transmute(hashes) };
 
     // assert_eq!(hashes.len(), file_names.len());
 
