@@ -161,9 +161,10 @@ where
     let mut hashes: Vec<MaybeUninit<Digest>> = Vec::with_capacity(nb_files);
 
     // Spawn scope threads
-    thread::scope(|s| {
+    thread::scope(|s| -> Result<()> {
+        let mut handles = Vec::with_capacity(num_workers);
         for _ in 0..num_workers {
-            s.spawn(|| -> Result<()> {
+            handles.push(s.spawn(|| -> Result<()> {
                 loop {
                     // atomic counter
                     let i = next.fetch_add(1, Relaxed);
@@ -179,16 +180,29 @@ where
                     }
                 }
                 Ok(())
-            });
+            }));
         }
-    });
+
+        // Join on workers and bubble up any Errors we might encounter
+        for h in handles {
+            // After .map_err we have Result<Result<()>, anyhow::Error>, So the first ? unwraps the outer Result (join result)
+            // and after this first ? we have the inner Result<>. So it's handling panick of a worker first and then the worker's own error.
+            h.join()
+                .map_err(|p| anyhow::anyhow!("A Worker thread panicked: {p:?}"))??;
+        }
+
+        Ok(())
+    })?;
 
     // Now that the workers finished we need to properly set the length of the vec
-    unsafe {
-        hashes.set_len(nb_files);
-    }
     // And weneed to tramsmute the Vec<MaybeUninit<Digest>> to Vec<Digest>
-    let hashes: Vec<Digest> = unsafe { std::mem::transmute(hashes) };
+
+    // SAFETY: The workers didn't bubble any error so we have the guarranty that
+    // the Vec has a length of nb_files and is T: Digest
+    let hashes: Vec<Digest> = unsafe {
+        hashes.set_len(nb_files);
+        std::mem::transmute(hashes)
+    };
 
     // assert_eq!(hashes.len(), file_names.len());
 
