@@ -4,7 +4,7 @@ version = "1.1.0"
 authors = ["Nelson Antunes <me@nelsonantunes.com>"]
 edition = "2024"
 license = "MIT"
-description = "CLI for dataset hashing and comparison"
+description = "Rush: Dataset hashing and Comparison tool"
 
 
 [dependencies]
