@@ -5,7 +5,7 @@ use crate::hashers::utils::HashMethod;
 
 /// Simple tool to hash and compare your data
 #[derive(Parser, Debug)]
-#[command(name="rush", version = "1.0", about, long_about = None)]
+#[command(name="rush", version = "1.1.0", about, long_about = None)]
 pub(crate) struct Cli {
     /// The entry point command like build, compare...
     #[command(subcommand)]
